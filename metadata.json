@@ -1,0 +1,6 @@
+{
+  "name": "Axiom AI",
+  "description": "Think Smarter. Respond Faster. Ultra-modern AI chatbot application powered by Google Gemini and multi-provider architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

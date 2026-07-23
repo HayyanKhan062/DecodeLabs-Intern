@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+@layer base {
+  :root, .dark {
+    --color-bg-main: #020617;
+    --color-bg-surface: #0f172a;
+    --color-bg-card: #1e293b;
+    --color-bg-hover: #1e293b;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-text-main: #f8fafc;
+    --color-text-muted: #94a3b8;
+    color-scheme: dark;
+  }
+
+  .light {
+    --color-bg-main: #f8fafc;
+    --color-bg-surface: #ffffff;
+    --color-bg-card: #f1f5f9;
+    --color-bg-hover: #e2e8f0;
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-text-main: #0f172a;
+    --color-text-muted: #475569;
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-bg-main);
+    color: var(--color-text-main);
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  }
+}
+
+/* ----------------------------------------------------
+   LIGHT MODE OVERRIDES FOR HIGH CONTRAST & ACCESSIBILITY
+   ---------------------------------------------------- */
+html.light body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Main dark container overrides in light mode */
+html.light .bg-slate-950,
+html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/90,
+html.light .bg-slate-950\/95 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-slate-900,
+html.light .bg-slate-900\/40,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/95 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html.light .bg-slate-800,
+html.light .bg-slate-800\/40,
+html.light .bg-slate-800\/60,
+html.light .bg-slate-800\/80,
+html.light .bg-slate-800\/90 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+/* Borders in light mode */
+html.light .border-slate-800,
+html.light .border-slate-800\/40,
+html.light .border-slate-800\/60,
+html.light .border-slate-800\/80,
+html.light .border-slate-700,
+html.light .border-slate-700\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Text elements in light mode */
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Inputs and Textareas in light mode */
+html.light input,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Hover states in light mode */
+html.light .hover\:bg-slate-900:hover,
+html.light .hover\:bg-slate-800:hover,
+html.light .hover\:bg-slate-800\/80:hover {
+  background-color: #e2e8f0 !important;
+}
+
+html.light .hover\:bg-slate-950:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Prose markdown in light mode */
+html.light .prose {
+  color: #1e293b !important;
+}
+
+html.light .prose p,
+html.light .prose li,
+html.light .prose strong {
+  color: #1e293b !important;
+}
+
+html.light .prose h1,
+html.light .prose h2,
+html.light .prose h3,
+html.light .prose h4 {
+  color: #0f172a !important;
+}
+
+/* Custom scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
