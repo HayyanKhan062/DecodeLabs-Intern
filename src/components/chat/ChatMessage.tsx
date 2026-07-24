@@ -11,12 +11,9 @@ import {
   Edit2,
   Trash2,
   AlertCircle,
-  User,
-  Sparkles,
 } from 'lucide-react';
 import { ChatMessage as ChatMessageType } from '../../types/chat';
 import { useChat } from '../../contexts/ChatContext';
-import { getModelDisplayName } from '../../lib/ai-providers';
 import { CodeBlock } from './CodeBlock';
 import { AttachmentPreview } from './AttachmentPreview';
 
@@ -49,248 +46,204 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className={`w-full px-4 py-3 md:px-8 flex ${
+      transition={{ duration: 0.2 }}
+      className={`w-full px-4 py-2.5 md:px-8 flex ${
         isUser ? 'justify-end' : 'justify-start'
       }`}
     >
       <div
-        className={`flex gap-3 max-w-[88%] md:max-w-[80%] ${
-          isUser ? 'flex-row-reverse items-start' : 'flex-row items-start'
+        className={`flex flex-col min-w-0 max-w-[88%] md:max-w-[80%] ${
+          isUser ? 'items-end' : 'items-start'
         }`}
       >
-        {/* Avatar */}
-        <div className="shrink-0 pt-0.5">
-          {isUser ? (
-            <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <User className="w-4 h-4 md:w-5 md:h-5" />
+        {/* Attachments if present */}
+        {message.attachments && message.attachments.length > 0 && (
+          <div className={isUser ? 'flex justify-end w-full mb-2' : 'w-full mb-2'}>
+            <AttachmentPreview attachments={message.attachments} readonly />
+          </div>
+        )}
+
+        {/* Message Content Bubble */}
+        <div
+          className={`group relative rounded-2xl p-4 text-sm md:text-base leading-relaxed transition-all shadow-md ${
+            isUser
+              ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white rounded-tr-xs shadow-purple-950/20'
+              : 'bg-slate-900/90 border border-slate-800/80 text-slate-100 rounded-tl-xs shadow-slate-950/40'
+          }`}
+        >
+          {isEditing ? (
+            <div className="space-y-3 min-w-[280px]">
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-950 border border-blue-500/50 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans text-sm resize-y min-h-[90px]"
+              />
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white shadow-md transition-all"
+                >
+                  Save & Resubmit
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="relative w-8 h-8 md:w-9 md:h-9 rounded-xl p-[1px] bg-gradient-to-tr from-cyan-400 via-blue-500 to-purple-600 shadow-md shadow-purple-500/20">
-              <div className="w-full h-full rounded-[11px] bg-slate-950 flex items-center justify-center overflow-hidden">
-                <img
-                  src="/axiom-logo.jpg"
-                  alt="Axiom AI"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-                <Sparkles className="w-4 h-4 text-purple-400 absolute hidden peer-error:block" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Message Container & Content */}
-        <div className={`flex flex-col min-w-0 ${isUser ? 'items-end' : 'items-start'}`}>
-          {/* Header info (Author, Model badge, Timestamp) */}
-          <div
-            className={`flex items-center gap-2 mb-1 text-[11px] text-slate-400 ${
-              isUser ? 'flex-row-reverse text-right' : 'flex-row text-left'
-            }`}
-          >
-            <span className={`font-semibold ${isUser ? 'text-blue-400' : 'text-purple-400'}`}>
-              {isUser ? 'You' : 'Axiom'}
-            </span>
-            {!isUser && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono">
-                {getModelDisplayName(message.modelUsed)}
-              </span>
-            )}
-            <span className="text-[10px] text-slate-500 font-mono">
-              {new Date(message.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-          </div>
-
-          {/* Attachments */}
-          {message.attachments && message.attachments.length > 0 && (
-            <div className={isUser ? 'flex justify-end w-full' : 'w-full'}>
-              <AttachmentPreview attachments={message.attachments} readonly />
-            </div>
-          )}
-
-          {/* Message Bubble */}
-          <div
-            className={`group relative rounded-2xl p-4 text-sm md:text-base leading-relaxed transition-all shadow-xl ${
-              isUser
-                ? 'bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white rounded-tr-xs shadow-purple-900/20'
-                : 'bg-slate-900/90 border border-slate-800/80 text-slate-100 rounded-tl-xs shadow-slate-950/40'
-            }`}
-          >
-            {isEditing ? (
-              <div className="space-y-3 min-w-[280px]">
-                <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-slate-950 border border-blue-500/50 text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans text-sm resize-y min-h-[90px]"
-                />
-                <div className="flex items-center gap-2 justify-end">
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveEdit}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white shadow-md transition-all"
-                  >
-                    Save & Resubmit
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div
-                className={`prose ${
-                  isUser ? 'prose-invert text-white' : 'prose-invert text-slate-200'
-                } max-w-none text-sm md:text-[15px] leading-relaxed break-words ${
-                  message.isError ? 'text-rose-300 font-medium' : ''
-                }`}
-              >
-                {message.isError && (
-                  <div className="flex items-center gap-2 mb-2 text-rose-300 font-semibold">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>Error Generating Response</span>
-                  </div>
-                )}
-
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    pre({ children }) {
-                      return <>{children}</>;
-                    },
-                    code({ node, inline, className, children, ...props }: any) {
-                      const match = /language-(\w+)/.exec(className || '');
-                      const codeValue = String(children).replace(/\n$/, '');
-
-                      return !inline ? (
-                        <CodeBlock language={match ? match[1] : 'text'} value={codeValue} />
-                      ) : (
-                        <code
-                          className={`px-1.5 py-0.5 rounded-md font-mono text-xs ${
-                            isUser
-                              ? 'bg-white/20 text-white'
-                              : 'bg-slate-800 border border-slate-700/60 text-purple-300'
-                          }`}
-                          {...props}
-                        >
-                          {children}
-                        </code>
-                      );
-                    },
-                    p({ children }) {
-                      return <div className="mb-2 last:mb-0 leading-relaxed">{children}</div>;
-                    },
-                    ul({ children }) {
-                      return <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>;
-                    },
-                    ol({ children }) {
-                      return <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>;
-                    },
-                    table({ children }) {
-                      return (
-                        <div className="my-3 overflow-x-auto rounded-xl border border-slate-800">
-                          <table className="w-full text-left text-xs text-slate-300">{children}</table>
-                        </div>
-                      );
-                    },
-                    thead({ children }) {
-                      return <thead className="bg-slate-900 border-b border-slate-800 text-slate-200 uppercase text-[10px] tracking-wider">{children}</thead>;
-                    },
-                    td({ children }) {
-                      return <td className="px-3 py-2 border-b border-slate-800/60">{children}</td>;
-                    },
-                    th({ children }) {
-                      return <th className="px-3 py-2 font-semibold">{children}</th>;
-                    },
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
-              </div>
-            )}
-          </div>
-
-          {/* Action Toolbar buttons */}
-          {!isEditing && (
             <div
-              className={`flex items-center gap-1 mt-1 opacity-70 hover:opacity-100 transition-opacity ${
-                isUser ? 'justify-end' : 'justify-start'
+              className={`prose ${
+                isUser ? 'prose-invert text-white' : 'prose-invert text-slate-200'
+              } max-w-none text-sm md:text-[15px] leading-relaxed break-words ${
+                message.isError ? 'text-rose-300 font-medium' : ''
               }`}
             >
-              <button
-                onClick={handleCopy}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-colors"
-                title="Copy response"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-
-              {!isUser && (
-                <>
-                  <button
-                    onClick={() => toggleReaction(message.id, 'liked')}
-                    className={`p-1 rounded-lg transition-colors ${
-                      message.reaction?.liked
-                        ? 'text-emerald-400 bg-emerald-500/10'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
-                    }`}
-                    title="Good response"
-                  >
-                    <ThumbsUp className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => toggleReaction(message.id, 'disliked')}
-                    className={`p-1 rounded-lg transition-colors ${
-                      message.reaction?.disliked
-                        ? 'text-rose-400 bg-rose-500/10'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
-                    }`}
-                    title="Bad response"
-                  >
-                    <ThumbsDown className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => regenerateMessage(message.id)}
-                    disabled={isGenerating}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 disabled:opacity-40 transition-colors"
-                    title="Regenerate response"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                </>
+              {message.isError && (
+                <div className="flex items-center gap-2 mb-2 text-rose-300 font-semibold">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>Error Generating Response</span>
+                </div>
               )}
 
-              {isUser && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  disabled={isGenerating}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 disabled:opacity-40 transition-colors"
-                  title="Edit message"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  pre({ children }) {
+                    return <>{children}</>;
+                  },
+                  code({ node, inline, className, children, ...props }: any) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const codeValue = String(children).replace(/\n$/, '');
 
-              <button
-                onClick={() => deleteMessage(message.id)}
-                className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition-colors"
-                title="Delete message"
+                    return !inline ? (
+                      <CodeBlock language={match ? match[1] : 'text'} value={codeValue} />
+                    ) : (
+                      <code
+                        className={`px-1.5 py-0.5 rounded-md font-mono text-xs ${
+                          isUser
+                            ? 'bg-white/20 text-white'
+                            : 'bg-slate-800 border border-slate-700/60 text-purple-300'
+                        }`}
+                        {...props}
+                      >
+                        {children}
+                      </code>
+                    );
+                  },
+                  p({ children }) {
+                    return <div className="mb-2 last:mb-0 leading-relaxed">{children}</div>;
+                  },
+                  ul({ children }) {
+                    return <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>;
+                  },
+                  ol({ children }) {
+                    return <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>;
+                  },
+                  table({ children }) {
+                    return (
+                      <div className="my-3 overflow-x-auto rounded-xl border border-slate-800">
+                        <table className="w-full text-left text-xs text-slate-300">{children}</table>
+                      </div>
+                    );
+                  },
+                  thead({ children }) {
+                    return (
+                      <thead className="bg-slate-900 border-b border-slate-800 text-slate-200 uppercase text-[10px] tracking-wider">
+                        {children}
+                      </thead>
+                    );
+                  },
+                  td({ children }) {
+                    return <td className="px-3 py-2 border-b border-slate-800/60">{children}</td>;
+                  },
+                  th({ children }) {
+                    return <th className="px-3 py-2 font-semibold">{children}</th>;
+                  },
+                }}
               >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+                {message.content}
+              </ReactMarkdown>
             </div>
           )}
         </div>
+
+        {/* Action Toolbar buttons */}
+        {!isEditing && (
+          <div
+            className={`flex items-center gap-1 mt-1 opacity-70 hover:opacity-100 transition-opacity ${
+              isUser ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            <button
+              onClick={handleCopy}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 transition-colors"
+              title="Copy message"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+
+            {!isUser && (
+              <>
+                <button
+                  onClick={() => toggleReaction(message.id, 'liked')}
+                  className={`p-1 rounded-lg transition-colors ${
+                    message.reaction?.liked
+                      ? 'text-emerald-400 bg-emerald-500/10'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                  }`}
+                  title="Good response"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => toggleReaction(message.id, 'disliked')}
+                  className={`p-1 rounded-lg transition-colors ${
+                    message.reaction?.disliked
+                      ? 'text-rose-400 bg-rose-500/10'
+                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80'
+                  }`}
+                  title="Bad response"
+                >
+                  <ThumbsDown className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  onClick={() => regenerateMessage(message.id)}
+                  disabled={isGenerating}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 disabled:opacity-40 transition-colors"
+                  title="Regenerate response"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+
+            {isUser && (
+              <button
+                onClick={() => setIsEditing(true)}
+                disabled={isGenerating}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 disabled:opacity-40 transition-colors"
+                title="Edit message"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            <button
+              onClick={() => deleteMessage(message.id)}
+              className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition-colors"
+              title="Delete message"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
   );

@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * GEMINI API KEY & SERVICE CONFIGURATION
+ * ============================================================================
+ * To deploy or run this application with your own Google Gemini API key:
+ * 1. Set GEMINI_API_KEY=YOUR_GEMINI_API_KEY in your .env or environment variables.
+ * 2. You can obtain a free key at: https://aistudio.google.com/
+ * ============================================================================
+ */
+
 import { GoogleGenAI } from '@google/genai';
 import { Attachment } from '../types/chat';
 
@@ -33,6 +43,7 @@ export async function handleStreamChatResponse(
     (customKey?.startsWith('sk-or-') ? customKey : undefined) ||
     process.env.OPENROUTER_API_KEY;
 
+  // Retrieve Gemini API key from custom user key or process.env.GEMINI_API_KEY
   const geminiKey =
     customKeys.gemini ||
     (customKey?.startsWith('AIza') ? customKey : undefined) ||
@@ -40,32 +51,32 @@ export async function handleStreamChatResponse(
 
   const isGeminiModel = modelReq.startsWith('gemini');
 
-  // If Gemini model and Gemini key exists, prefer native Gemini SDK
+  // 1. Prefer native Google Gemini SDK if Gemini key is available
   if (isGeminiModel && geminiKey) {
     try {
       await streamGeminiResponse(payload, geminiKey, modelReq, onChunk);
       return;
     } catch (err: any) {
-      console.warn('Native Gemini SDK failed, trying OpenRouter fallback if available:', err.message);
+      console.warn('Native Gemini SDK failed, trying OpenRouter fallback if available:', err?.message || err);
       if (!openrouterKey) throw err;
     }
   }
 
-  // If OpenRouter key exists, stream via OpenRouter
+  // 2. If OpenRouter key exists, stream via OpenRouter
   if (openrouterKey) {
     const mappedModel = OPENROUTER_MODEL_MAP[modelReq] || modelReq;
     await streamOpenRouterResponse(payload, openrouterKey, mappedModel, onChunk);
     return;
   }
 
-  // Fallback if only Gemini Key exists for other models
+  // 3. Fallback to Gemini SDK with default key if present
   if (geminiKey) {
     await streamGeminiResponse(payload, geminiKey, 'gemini-2.5-flash', onChunk);
     return;
   }
 
   throw new Error(
-    'No valid API key found. Please configure OPENROUTER_API_KEY or GEMINI_API_KEY in environment variables or settings.'
+    'No valid API key found. Please configure GEMINI_API_KEY in your environment variables (.env file) or inside Settings.'
   );
 }
 
@@ -187,10 +198,20 @@ async function streamGeminiResponse(
 ): Promise<void> {
   const ai = new GoogleGenAI({ apiKey });
 
-  let actualModel = modelName;
-  if (!actualModel.startsWith('gemini')) {
-    actualModel = 'gemini-2.5-flash';
-  }
+  // Clean model name if passed with 'models/' prefix
+  let cleanModel = modelName.startsWith('models/') ? modelName.replace('models/', '') : modelName;
+
+  // Build model candidate sequence to guarantee execution
+  const candidates = Array.from(
+    new Set([
+      cleanModel,
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-2.5-pro',
+      'gemini-1.5-pro',
+    ])
+  );
 
   const contents = payload.messages.map((msg) => {
     const role = msg.role === 'assistant' ? 'model' : 'user';
@@ -227,10 +248,6 @@ async function streamGeminiResponse(
     maxOutputTokens: payload.maxTokens ?? 4096,
   };
 
-  const candidates = Array.from(
-    new Set([actualModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'])
-  );
-
   let lastErr: any = null;
   for (const modelCandidate of candidates) {
     try {
@@ -256,3 +273,4 @@ async function streamGeminiResponse(
     throw lastErr;
   }
 }
+

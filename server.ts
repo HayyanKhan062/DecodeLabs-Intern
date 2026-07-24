@@ -1,3 +1,12 @@
+/**
+ * Axiom AI Server
+ * ==============================================================================
+ * To deploy or run this application with your own Google Gemini API key:
+ * Set GEMINI_API_KEY=YOUR_GEMINI_API_KEY in your .env or environment variables.
+ * Obtain your free API key at: https://aistudio.google.com/
+ * ==============================================================================
+ */
+
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
