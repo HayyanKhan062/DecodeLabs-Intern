@@ -245,7 +245,22 @@ async function streamGeminiResponse(
     ])
   );
 
-  const contents = payload.messages.map((msg) => {
+  // Extract any system messages into systemInstruction
+  const systemMessagesText = payload.messages
+    .filter((m) => m.role === 'system')
+    .map((m) => m.content)
+    .join('\n\n');
+
+  let combinedSystemInstruction = payload.systemInstruction || '';
+  if (systemMessagesText) {
+    combinedSystemInstruction = combinedSystemInstruction
+      ? `${combinedSystemInstruction}\n\n${systemMessagesText}`
+      : systemMessagesText;
+  }
+
+  const chatMessages = payload.messages.filter((m) => m.role !== 'system');
+
+  const contents = chatMessages.map((msg) => {
     const role = msg.role === 'assistant' ? 'model' : 'user';
     const parts: any[] = [];
 
@@ -278,8 +293,8 @@ async function streamGeminiResponse(
     temperature: payload.temperature ?? 0.7,
     maxOutputTokens: payload.maxTokens ?? 4096,
   };
-  if (payload.systemInstruction) {
-    config.systemInstruction = payload.systemInstruction;
+  if (combinedSystemInstruction) {
+    config.systemInstruction = combinedSystemInstruction;
   }
 
   let lastErr: any = null;
