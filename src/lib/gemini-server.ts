@@ -71,7 +71,7 @@ export async function handleStreamChatResponse(
 
   // 3. Fallback to Gemini SDK with default key if present
   if (geminiKey) {
-    await streamGeminiResponse(payload, geminiKey, 'gemini-2.5-flash', onChunk);
+    await streamGeminiResponse(payload, geminiKey, 'gemini-3.6-flash', onChunk);
     return;
   }
 
@@ -196,20 +196,36 @@ async function streamGeminiResponse(
   modelName: string,
   onChunk: (text: string) => void
 ): Promise<void> {
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
 
   // Clean model name if passed with 'models/' prefix
   let cleanModel = modelName.startsWith('models/') ? modelName.replace('models/', '') : modelName;
+
+  if (
+    cleanModel === 'gemini-2.5-flash' ||
+    cleanModel === 'gemini-2.0-flash' ||
+    cleanModel === 'gemini-1.5-flash' ||
+    cleanModel === 'gemini-2.5-pro' ||
+    cleanModel === 'gemini-1.5-pro'
+  ) {
+    cleanModel = 'gemini-3.6-flash';
+  }
 
   // Build model candidate sequence to guarantee execution
   const candidates = Array.from(
     new Set([
       cleanModel,
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-2.5-pro',
-      'gemini-1.5-pro',
+      'gemini-3.6-flash',
+      'gemini-flash-latest',
+      'gemini-3.1-flash-lite',
+      'gemini-3.1-pro-preview',
     ])
   );
 

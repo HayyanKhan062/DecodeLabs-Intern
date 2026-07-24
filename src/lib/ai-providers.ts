@@ -55,10 +55,10 @@ export const AI_PROVIDERS: ProviderInfo[] = [
 
 export const AVAILABLE_MODELS: AIModel[] = [
   {
-    id: 'gemini-2.5-flash',
+    id: 'gemini-3.6-flash',
     name: 'AX Nova 1.0',
     provider: 'gemini',
-    description: 'Axiom’s primary intelligence engine powered by Gemini 2.5 Flash',
+    description: 'Axiom’s primary intelligence engine powered by Gemini 3.6 Flash',
     badge: 'Recommended',
     maxTokens: 8192,
     supportsVision: true,
@@ -81,7 +81,12 @@ export function getModelById(modelId: string): AIModel {
 
 export function getModelDisplayName(modelId?: string): string {
   if (!modelId) return 'AX Nova 1.0';
-  if (modelId === 'gemini-2.5-flash' || modelId === 'gemini-2.5-pro' || modelId === 'AX Nova 1.0') {
+  if (
+    modelId === 'gemini-3.6-flash' ||
+    modelId === 'gemini-2.5-flash' ||
+    modelId === 'gemini-2.5-pro' ||
+    modelId === 'AX Nova 1.0'
+  ) {
     return 'AX Nova 1.0';
   }
   const found = AVAILABLE_MODELS.find((m) => m.id === modelId);
