@@ -201,14 +201,31 @@ export const Navbar: React.FC = () => {
             >
               {user ? (
                 <div className="p-3 border-b border-slate-800 mb-1">
-                  <p className="font-bold text-slate-100 truncate">{user.fullName}</p>
-                  <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-slate-100 truncate">{user.fullName}</p>
+                    {user.isGuest && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium">
+                        Guest
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-400 truncate">{user.isGuest ? 'Temporary Session' : user.email}</p>
                 </div>
               ) : (
                 <div className="p-3 border-b border-slate-800 mb-1">
                   <p className="font-semibold text-slate-100">Guest User</p>
                   <p className="text-[11px] text-slate-400">Sign in to sync history</p>
                 </div>
+              )}
+
+              {user?.isGuest && (
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-800 text-purple-300 font-medium transition-colors"
+                >
+                  <LogIn className="w-4 h-4 text-purple-400" />
+                  <span>Sign In / Register</span>
+                </button>
               )}
 
               {user ? (

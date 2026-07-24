@@ -25,6 +25,7 @@ export const AuthModal: React.FC = () => {
     login,
     signUp,
     loginWithGoogle,
+    continueAsGuest,
     logout,
   } = useAuth();
 
@@ -251,6 +252,19 @@ export const AuthModal: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
 
+            {/* Guest Mode Option */}
+            <button
+              type="button"
+              onClick={() => {
+                clearMessages();
+                continueAsGuest();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-cyan-300 font-semibold text-xs transition-all shadow-sm"
+            >
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span>Continue as Guest</span>
+            </button>
+
             {/* Switch to Sign Up */}
             <p className="text-center text-xs text-slate-400 pt-2">
               Don't have an account?{' '}
@@ -381,6 +395,18 @@ export const AuthModal: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                clearMessages();
+                continueAsGuest();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-cyan-300 font-semibold text-xs transition-all shadow-sm"
+            >
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span>Continue as Guest</span>
+            </button>
+
             <p className="text-center text-xs text-slate-400 pt-1">
               Already have an account?{' '}
               <button
@@ -458,8 +484,12 @@ export const AuthModal: React.FC = () => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm text-slate-100 truncate">{user.fullName}</h3>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">
-                    {user.provider === 'google' ? 'Google Account' : 'Verified User'}
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    user.isGuest 
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                  }`}>
+                    {user.isGuest ? 'Temporary Session' : user.provider === 'google' ? 'Google Account' : 'Verified User'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 truncate">@{user.username}</p>
@@ -467,20 +497,49 @@ export const AuthModal: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800/80 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>Account Tier</span>
-                <span className="font-semibold text-purple-300">Axiom PRO Unlimited</span>
+            {user.isGuest ? (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2 text-xs text-amber-200/90">
+                <p className="font-semibold text-amber-300">Guest Mode Active</p>
+                <p className="text-[11px] leading-relaxed">
+                  Conversations and temporary uploads in guest mode are temporary and will be deleted when you log out, refresh, or end your session.
+                </p>
+                <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                  <button
+                    onClick={() => {
+                      clearMessages();
+                      setAuthMode('login');
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs transition-colors"
+                  >
+                    Sign In to Save History
+                  </button>
+                  <button
+                    onClick={() => {
+                      clearMessages();
+                      setAuthMode('signup');
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs transition-colors"
+                  >
+                    Create Account
+                  </button>
+                </div>
               </div>
-              <div className="flex justify-between text-slate-400">
-                <span>AI Engine</span>
-                <span className="font-semibold text-cyan-300">AX Nova 1.0</span>
+            ) : (
+              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-800/80 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-400">
+                  <span>Account Tier</span>
+                  <span className="font-semibold text-purple-300">Axiom PRO Unlimited</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>AI Engine</span>
+                  <span className="font-semibold text-cyan-300">AX Nova 1.0</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Member Since</span>
+                  <span className="text-slate-300">July 2026</span>
+                </div>
               </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Member Since</span>
-                <span className="text-slate-300">July 2026</span>
-              </div>
-            </div>
+            )}
 
             <button
               type="button"
@@ -488,7 +547,7 @@ export const AuthModal: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 font-semibold text-xs transition-all"
             >
               <LogOut className="w-4 h-4" />
-              <span>Log Out of Axiom</span>
+              <span>{user.isGuest ? 'End Guest Session' : 'Log Out of Axiom'}</span>
             </button>
           </div>
         )}

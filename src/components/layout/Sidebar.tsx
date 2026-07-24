@@ -49,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onRenameRequest }) => {
     setIsAboutOpen,
     activeSession,
   } = useChat();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated, openAuthModal, user } = useAuth();
 
   const [filterText, setFilterText] = useState('');
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -162,6 +162,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onRenameRequest }) => {
                 </div>
               ) : (
                 <>
+                  {user?.isGuest && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-300 font-medium flex items-center justify-between">
+                      <span>Temporary Guest Session</span>
+                      <span className="text-amber-400/80 font-normal">Not Saved</span>
+                    </div>
+                  )}
+
                   {/* Pinned Chats */}
                   {pinnedSessions.length > 0 && (
                     <div className="space-y-1">

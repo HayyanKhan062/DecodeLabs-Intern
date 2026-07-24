@@ -18,7 +18,7 @@ import { Sparkles, ArrowDown, LogIn, UserPlus, Lock } from 'lucide-react';
 
 function ChatContentArea() {
   const { activeSession, isGenerating, settings } = useChat();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated, openAuthModal, continueAsGuest } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -61,27 +61,44 @@ function ChatContentArea() {
                 Welcome to Axiom AI
               </h2>
               <p className="text-sm font-semibold text-purple-300">
-                Please sign in or create an account to use Axiom AI.
+                Please sign in, create an account, or continue as guest to use Axiom AI.
               </p>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Access next-generation AI intelligence, multi-modal file synthesis, custom system instructions, and secure chat history.
+                Access next-generation AI intelligence, multi-modal file synthesis, custom system instructions, and fast conversation search.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            <div className="space-y-2.5 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button
+                  onClick={() => openAuthModal('login')}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-semibold text-xs shadow-lg shadow-purple-600/30 transition-all hover:scale-[1.01]"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In</span>
+                </button>
+                <button
+                  onClick={() => openAuthModal('signup')}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-semibold text-xs transition-all"
+                >
+                  <UserPlus className="w-4 h-4 text-purple-400" />
+                  <span>Sign Up</span>
+                </button>
+              </div>
+
+              <div className="relative flex items-center justify-center my-1">
+                <div className="border-t border-slate-800 w-full" />
+                <span className="bg-slate-900 px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider absolute">
+                  Or
+                </span>
+              </div>
+
               <button
-                onClick={() => openAuthModal('login')}
-                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-semibold text-xs shadow-lg shadow-purple-600/30 transition-all hover:scale-[1.01]"
+                onClick={continueAsGuest}
+                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-slate-800/80 hover:bg-slate-700/90 border border-slate-700/80 text-cyan-300 hover:text-cyan-200 font-semibold text-xs transition-all shadow-md"
               >
-                <LogIn className="w-4 h-4" />
-                <span>Sign In</span>
-              </button>
-              <button
-                onClick={() => openAuthModal('signup')}
-                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-semibold text-xs transition-all"
-              >
-                <UserPlus className="w-4 h-4 text-purple-400" />
-                <span>Create Account</span>
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span>Continue as Guest</span>
               </button>
             </div>
           </div>

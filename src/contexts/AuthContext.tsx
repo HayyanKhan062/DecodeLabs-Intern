@@ -8,6 +8,7 @@ export interface UserProfile {
   avatar?: string;
   provider: 'email' | 'google';
   createdAt: string;
+  isGuest?: boolean;
 }
 
 interface AuthContextType {
@@ -21,6 +22,7 @@ interface AuthContextType {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>;
   signUp: (fullName: string, username: string, email: string, password: string) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
+  continueAsGuest: () => void;
   logout: () => void;
 }
 
@@ -54,7 +56,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'profile' | 'forgot'>('login');
 
   useEffect(() => {
-    if (user) {
+    if (user && !user.isGuest) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
     } else {
       localStorage.removeItem(STORAGE_KEY);
@@ -66,6 +68,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsAuthModalOpen(true);
   };
 
+  const continueAsGuest = () => {
+    const guestUser: UserProfile = {
+      id: `guest_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      fullName: 'Guest User',
+      username: 'guest',
+      email: 'guest@axiom.ai',
+      provider: 'email',
+      isGuest: true,
+      createdAt: new Date().toISOString(),
+    };
+    setUser(guestUser);
+    setIsAuthModalOpen(false);
+  };
+
   const login = async (email: string, _password: string, _rememberMe = true): Promise<boolean> => {
     // Simulate login validation
     const loggedInUser: UserProfile = {
@@ -75,6 +91,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email,
       provider: 'email',
       createdAt: new Date().toISOString(),
+      isGuest: false,
     };
     setUser(loggedInUser);
     setIsAuthModalOpen(false);
@@ -94,6 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email,
       provider: 'email',
       createdAt: new Date().toISOString(),
+      isGuest: false,
     };
     setUser(newUser);
     setIsAuthModalOpen(false);
@@ -110,6 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       avatar: '/axiom-logo.jpg',
       provider: 'google',
       createdAt: new Date().toISOString(),
+      isGuest: false,
     };
     setUser(googleUser);
     setIsAuthModalOpen(false);
@@ -124,6 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.removeItem('axiom_sessions');
       localStorage.removeItem('axiom_active_session_id');
       localStorage.removeItem('axiom_settings');
+      sessionStorage.clear();
     } catch (e) {
       console.error('Failed to clear storage on logout:', e);
     }
@@ -142,6 +162,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         signUp,
         loginWithGoogle,
+        continueAsGuest,
         logout,
       }}
     >

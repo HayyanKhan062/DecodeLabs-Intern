@@ -126,19 +126,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [isAuthenticated]);
 
-  // Persist sessions when authenticated
+  // Persist sessions when authenticated as a registered non-guest user
   useEffect(() => {
-    if (isAuthenticated && sessions.length > 0) {
+    if (isAuthenticated && user && !user.isGuest && sessions.length > 0) {
       localStorage.setItem('axiom_sessions', JSON.stringify(sessions));
     }
-  }, [sessions, isAuthenticated]);
+  }, [sessions, isAuthenticated, user]);
 
-  // Persist active session ID when authenticated
+  // Persist active session ID when authenticated as a registered non-guest user
   useEffect(() => {
-    if (isAuthenticated && activeSessionId) {
+    if (isAuthenticated && user && !user.isGuest && activeSessionId) {
       localStorage.setItem('axiom_active_session_id', activeSessionId);
     }
-  }, [activeSessionId, isAuthenticated]);
+  }, [activeSessionId, isAuthenticated, user]);
 
   // Persist settings
   useEffect(() => {
