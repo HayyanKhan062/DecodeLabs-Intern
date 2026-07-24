@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (e) {
       console.error('Failed to parse auth user state:', e);
     }
-    return DEFAULT_USER; // Default logged in as requested
+    return null; // Guest state by default
   });
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -119,6 +119,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setUser(null);
     setIsAuthModalOpen(false);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('axiom_sessions');
+      localStorage.removeItem('axiom_active_session_id');
+      localStorage.removeItem('axiom_settings');
+    } catch (e) {
+      console.error('Failed to clear storage on logout:', e);
+    }
   };
 
   return (

@@ -19,6 +19,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { useChat } from '../../contexts/ChatContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { ChatSession } from '../../types/chat';
 import {
   exportChatAsTxt,
@@ -48,6 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onRenameRequest }) => {
     setIsAboutOpen,
     activeSession,
   } = useChat();
+  const { isAuthenticated, openAuthModal } = useAuth();
 
   const [filterText, setFilterText] = useState('');
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -119,8 +121,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ onRenameRequest }) => {
               {/* New Chat Primary Button */}
               <button
                 onClick={() => {
-                  createNewChat();
-                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                  if (!isAuthenticated) {
+                    openAuthModal('login');
+                  } else {
+                    createNewChat();
+                    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                  }
                 }}
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-semibold text-xs shadow-lg shadow-purple-600/20 transition-all hover:scale-[1.01]"
               >
@@ -143,56 +149,71 @@ export const Sidebar: React.FC<SidebarProps> = ({ onRenameRequest }) => {
 
             {/* Middle Chat Sessions List */}
             <div className="flex-1 min-h-0 overflow-y-auto my-3 space-y-4 pr-1 custom-scrollbar">
-              {/* Pinned Chats */}
-              {pinnedSessions.length > 0 && (
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1.5 px-2 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-                    <Pin className="w-3 h-3 text-amber-400 shrink-0" />
-                    <span>Pinned Chats</span>
-                  </div>
-                  {pinnedSessions.map((session) => (
-                    <SessionItem
-                      key={session.id}
-                      session={session}
-                      isActive={session.id === activeSessionId}
-                      onSelect={() => {
-                        selectSession(session.id);
-                        if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                      }}
-                      onRename={() => onRenameRequest(session)}
-                      onDelete={() => deleteSession(session.id)}
-                      onTogglePin={() => togglePinSession(session.id)}
-                    />
-                  ))}
+              {!isAuthenticated ? (
+                <div className="p-4 text-center space-y-3 my-auto rounded-2xl bg-slate-900/60 border border-slate-800/80 mt-4">
+                  <p className="text-xs font-semibold text-slate-200">Sign in to view history</p>
+                  <p className="text-[11px] text-slate-400">Please sign in or create an account to view and save conversation history.</p>
+                  <button
+                    onClick={() => openAuthModal('login')}
+                    className="w-full py-2 px-3 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-xs font-medium text-purple-200 transition-colors"
+                  >
+                    Sign In / Register
+                  </button>
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* Pinned Chats */}
+                  {pinnedSessions.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 px-2 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                        <Pin className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span>Pinned Chats</span>
+                      </div>
+                      {pinnedSessions.map((session) => (
+                        <SessionItem
+                          key={session.id}
+                          session={session}
+                          isActive={session.id === activeSessionId}
+                          onSelect={() => {
+                            selectSession(session.id);
+                            if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                          }}
+                          onRename={() => onRenameRequest(session)}
+                          onDelete={() => deleteSession(session.id)}
+                          onTogglePin={() => togglePinSession(session.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
 
-              {/* Recent Chats */}
-              <div className="space-y-1">
-                <div className="px-2 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-                  Recent Conversations ({recentSessions.length})
-                </div>
-                {recentSessions.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-500">
-                    No recent conversations found.
+                  {/* Recent Chats */}
+                  <div className="space-y-1">
+                    <div className="px-2 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                      Recent Conversations ({recentSessions.length})
+                    </div>
+                    {recentSessions.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-slate-500">
+                        No recent conversations found.
+                      </div>
+                    ) : (
+                      recentSessions.map((session) => (
+                        <SessionItem
+                          key={session.id}
+                          session={session}
+                          isActive={session.id === activeSessionId}
+                          onSelect={() => {
+                            selectSession(session.id);
+                            if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                          }}
+                          onRename={() => onRenameRequest(session)}
+                          onDelete={() => deleteSession(session.id)}
+                          onTogglePin={() => togglePinSession(session.id)}
+                        />
+                      ))
+                    )}
                   </div>
-                ) : (
-                  recentSessions.map((session) => (
-                    <SessionItem
-                      key={session.id}
-                      session={session}
-                      isActive={session.id === activeSessionId}
-                      onSelect={() => {
-                        selectSession(session.id);
-                        if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                      }}
-                      onRename={() => onRenameRequest(session)}
-                      onDelete={() => deleteSession(session.id)}
-                      onTogglePin={() => togglePinSession(session.id)}
-                    />
-                  ))
-                )}
-              </div>
+                </>
+              )}
             </div>
 
             {/* Footer Options & Actions (Anchored at bottom) */}

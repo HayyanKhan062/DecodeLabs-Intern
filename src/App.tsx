@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ChatProvider, useChat } from './contexts/ChatContext';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { WelcomeScreen } from './components/chat/WelcomeScreen';
@@ -14,10 +14,11 @@ import { AboutModal } from './components/modals/AboutModal';
 import { RenameModal } from './components/modals/RenameModal';
 import { AuthModal } from './components/modals/AuthModal';
 import { ChatSession } from './types/chat';
-import { Sparkles, ArrowDown } from 'lucide-react';
+import { Sparkles, ArrowDown, LogIn, UserPlus, Lock } from 'lucide-react';
 
 function ChatContentArea() {
   const { activeSession, isGenerating, settings } = useChat();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -30,10 +31,10 @@ function ChatContentArea() {
   };
 
   useEffect(() => {
-    if (settings.autoScroll) {
+    if (isAuthenticated && settings.autoScroll) {
       scrollToBottom();
     }
-  }, [messages, isGenerating, settings.autoScroll]);
+  }, [messages, isGenerating, settings.autoScroll, isAuthenticated]);
 
   // Handle scroll bottom button visibility
   const handleScroll = () => {
@@ -42,6 +43,53 @@ function ChatContentArea() {
     const isFarFromBottom = scrollHeight - scrollTop - clientHeight > 150;
     setShowScrollBottom(isFarFromBottom);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex-1 flex flex-col min-w-0 h-[calc(100vh-4rem)] relative overflow-hidden bg-slate-950 text-slate-100">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-blue-600/10 via-purple-600/10 to-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex-1 flex items-center justify-center p-6 text-center z-10">
+          <div className="max-w-md w-full p-8 rounded-3xl bg-slate-900/90 border border-slate-800 backdrop-blur-2xl shadow-2xl space-y-6">
+            <div className="w-16 h-16 mx-auto rounded-2xl p-[1px] bg-gradient-to-tr from-cyan-400 via-blue-500 to-purple-600 shadow-lg shadow-purple-500/20">
+              <div className="w-full h-full rounded-[15px] bg-slate-950 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-purple-400 animate-pulse" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold tracking-tight text-white">
+                Welcome to Axiom AI
+              </h2>
+              <p className="text-sm font-semibold text-purple-300">
+                Please sign in or create an account to use Axiom AI.
+              </p>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Access next-generation AI intelligence, multi-modal file synthesis, custom system instructions, and secure chat history.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <button
+                onClick={() => openAuthModal('login')}
+                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:opacity-95 text-white font-semibold text-xs shadow-lg shadow-purple-600/30 transition-all hover:scale-[1.01]"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+              <button
+                onClick={() => openAuthModal('signup')}
+                className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-semibold text-xs transition-all"
+              >
+                <UserPlus className="w-4 h-4 text-purple-400" />
+                <span>Create Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <ChatInput />
+      </div>
+    );
+  }
 
   // Map chat width settings to Tailwind max-width class
   const widthClass = {

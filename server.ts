@@ -22,6 +22,11 @@ app.use(express.json({ limit: '20mb' }));
 // API route for streaming AI chat completions
 app.post('/api/chat', async (req, res) => {
   try {
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    if (!authHeader || typeof authHeader !== 'string' || !authHeader.trim()) {
+      return res.status(401).json({ error: 'Unauthorized: Authentication required before using Axiom AI.' });
+    }
+
     const payload = req.body;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Transfer-Encoding', 'chunked');

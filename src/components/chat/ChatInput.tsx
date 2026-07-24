@@ -7,15 +7,18 @@ import {
   MicOff,
   Sparkles,
   AlertCircle,
+  Lock,
 } from 'lucide-react';
 import { Attachment } from '../../types/chat';
 import { useChat } from '../../contexts/ChatContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { processUploadedFile } from '../../lib/file-utils';
 import { SpeechToTextEngine } from '../../lib/speech';
 import { AttachmentPreview } from './AttachmentPreview';
 
 export const ChatInput: React.FC = () => {
   const { sendMessage, isGenerating, stopGenerating } = useChat();
+  const { isAuthenticated, openAuthModal } = useAuth();
 
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -131,6 +134,40 @@ export const ChatInput: React.FC = () => {
       await handleFileUpload(e.dataTransfer.files);
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="sticky bottom-0 z-20 w-full max-w-4xl mx-auto px-4 pb-6 pt-2">
+        <div
+          onClick={() => openAuthModal('login')}
+          className="relative rounded-2xl p-4 backdrop-blur-2xl bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 cursor-pointer text-slate-400 transition-all shadow-xl group flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 group-hover:scale-110 transition-transform">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs md:text-sm font-semibold text-slate-200 group-hover:text-purple-300 transition-colors">
+                Please sign in or create an account to use Axiom AI.
+              </p>
+              <p className="text-[11px] text-slate-500">
+                Authentication is required to send messages, upload documents, and view chat history.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openAuthModal('login');
+            }}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white font-medium text-xs shadow-md shrink-0"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

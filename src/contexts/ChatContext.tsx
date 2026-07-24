@@ -7,6 +7,7 @@ import {
 } from '../types/chat';
 import { API_CONFIG } from '../config/api';
 import { AVAILABLE_MODELS } from '../lib/ai-providers';
+import { useAuth } from './AuthContext';
 
 interface ChatContextType {
   sessions: ChatSession[];
@@ -65,6 +66,8 @@ const DEFAULT_SETTINGS: UserSettings = {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated, openAuthModal } = useAuth();
+
   // Load settings from localStorage
   const [settings, setSettings] = useState<UserSettings>(() => {
     const saved = localStorage.getItem('axiom_settings');
@@ -109,17 +112,33 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Abort controller reference for stopping generation
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Persist sessions
+  // Complete cleanup on logout or unauthenticated state
   useEffect(() => {
-    localStorage.setItem('axiom_sessions', JSON.stringify(sessions));
-  }, [sessions]);
+    if (!isAuthenticated) {
+      setSessions([]);
+      setActiveSessionId('');
+      try {
+        localStorage.removeItem('axiom_sessions');
+        localStorage.removeItem('axiom_active_session_id');
+      } catch (e) {
+        console.error('Failed to clear sessions on logout:', e);
+      }
+    }
+  }, [isAuthenticated]);
 
-  // Persist active session ID
+  // Persist sessions when authenticated
   useEffect(() => {
-    if (activeSessionId) {
+    if (isAuthenticated && sessions.length > 0) {
+      localStorage.setItem('axiom_sessions', JSON.stringify(sessions));
+    }
+  }, [sessions, isAuthenticated]);
+
+  // Persist active session ID when authenticated
+  useEffect(() => {
+    if (isAuthenticated && activeSessionId) {
       localStorage.setItem('axiom_active_session_id', activeSessionId);
     }
-  }, [activeSessionId]);
+  }, [activeSessionId, isAuthenticated]);
 
   // Persist settings
   useEffect(() => {
@@ -144,6 +163,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const createNewChat = (): string => {
+    if (!isAuthenticated) {
+      openAuthModal('login');
+      return '';
+    }
+
     const newSession: ChatSession = {
       id: `chat_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       title: 'New Conversation',
@@ -240,7 +264,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const response = await fetch(API_CONFIG.chatApiEndpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': user ? `Bearer ${user.id}` : '',
+        },
         body: JSON.stringify(payload),
         signal: abortControllerRef.current.signal,
       });
@@ -312,6 +339,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const sendMessage = async (content: string, attachments?: Attachment[]) => {
+    if (!isAuthenticated) {
+      openAuthModal('login');
+      return;
+    }
+
     let currentSessionId = activeSessionId;
 
     // Auto-create session if none active

@@ -29,6 +29,12 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Security check: Require authentication
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+  if (!authHeader || typeof authHeader !== 'string' || !authHeader.trim()) {
+    return res.status(401).json({ error: 'Unauthorized: Authentication required before using Axiom AI.' });
+  }
+
   try {
     let payload = req.body;
     if (typeof payload === 'string') {
