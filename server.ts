@@ -11,7 +11,7 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
-import { handleStreamChatResponse, parseGeminiErrorMessage } from './src/lib/gemini-server';
+import { handleStreamChatResponse, parseGeminiErrorMessage, getActiveApiKeys } from './src/lib/gemini-server';
 
 try {
   dotenv.config({ path: '.env.local' });
@@ -49,6 +49,13 @@ async function startServer() {
       const payload = req.body;
       if (!payload || !payload.messages) {
         return res.status(400).json({ error: 'Missing required payload or messages array.' });
+      }
+
+      const { geminiKey, openrouterKey } = getActiveApiKeys(payload);
+      if (!geminiKey && !openrouterKey) {
+        return res.status(400).json({
+          error: 'GEMINI_API_KEY environment variable is missing. Please set GEMINI_API_KEY in your environment variables or provide an API key in settings.',
+        });
       }
 
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');

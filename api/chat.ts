@@ -15,7 +15,7 @@ try {
   // Ignore filesystem dotenv errors in serverless runtime
 }
 
-import { handleStreamChatResponse, parseGeminiErrorMessage } from '../src/lib/gemini-server';
+import { handleStreamChatResponse, parseGeminiErrorMessage, getActiveApiKeys } from '../src/lib/gemini-server';
 
 export default async function handler(req: any, res: any) {
   // Enable CORS
@@ -48,6 +48,13 @@ export default async function handler(req: any, res: any) {
 
     if (!payload || !payload.messages) {
       return res.status(400).json({ error: 'Missing required payload or messages array.' });
+    }
+
+    const { geminiKey, openrouterKey } = getActiveApiKeys(payload);
+    if (!geminiKey && !openrouterKey) {
+      return res.status(400).json({
+        error: 'GEMINI_API_KEY environment variable is missing. Please configure GEMINI_API_KEY in your environment variables or provide an API key in settings.',
+      });
     }
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');

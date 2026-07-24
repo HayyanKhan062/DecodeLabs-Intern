@@ -88,6 +88,25 @@ export function parseGeminiErrorMessage(err: any): string {
   return clean || 'Unknown AI service error';
 }
 
+export function getActiveApiKeys(payload: ChatApiRequestPayload): { geminiKey?: string; openrouterKey?: string } {
+  const customKey = payload.customApiKey?.trim();
+  const customKeys = payload.customApiKeys || {};
+
+  const openrouterKey =
+    (customKeys.openrouter && customKeys.openrouter.trim()) ||
+    (customKey?.startsWith('sk-or-') ? customKey : undefined) ||
+    process.env.OPENROUTER_API_KEY?.trim();
+
+  const geminiKey =
+    (customKeys.gemini && customKeys.gemini.trim()) ||
+    (customKey && !customKey.startsWith('sk-or-') ? customKey : undefined) ||
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.API_KEY?.trim() ||
+    process.env.GOOGLE_API_KEY?.trim();
+
+  return { geminiKey, openrouterKey };
+}
+
 export async function handleStreamChatResponse(
   payload: ChatApiRequestPayload,
   onChunk: (text: string) => void
@@ -97,21 +116,7 @@ export async function handleStreamChatResponse(
   }
 
   const modelReq = payload.model || 'gemini-3.6-flash';
-  const customKey = payload.customApiKey?.trim();
-  const customKeys = payload.customApiKeys || {};
-
-  const openrouterKey =
-    (customKeys.openrouter && customKeys.openrouter.trim()) ||
-    (customKey?.startsWith('sk-or-') ? customKey : undefined) ||
-    process.env.OPENROUTER_API_KEY?.trim();
-
-  // Retrieve Gemini API key from custom user key or process.env.GEMINI_API_KEY
-  const geminiKey =
-    (customKeys.gemini && customKeys.gemini.trim()) ||
-    (customKey && !customKey.startsWith('sk-or-') ? customKey : undefined) ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.API_KEY?.trim() ||
-    process.env.GOOGLE_API_KEY?.trim();
+  const { geminiKey, openrouterKey } = getActiveApiKeys(payload);
 
   const isGeminiModel = modelReq.startsWith('gemini') || modelReq === 'custom' || modelReq === 'AX Nova 1.0';
 
