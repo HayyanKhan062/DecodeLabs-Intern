@@ -12,7 +12,14 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { handleStreamChatResponse } from './src/lib/gemini-server';
 
+dotenv.config({ path: '.env.local' });
 dotenv.config();
+
+if (!process.env.GEMINI_API_KEY && !process.env.OPENROUTER_API_KEY) {
+  console.warn(
+    '⚠️ [Axiom AI Warning]: GEMINI_API_KEY is not configured in server environment variables. Please add GEMINI_API_KEY to your .env file or server environment.'
+  );
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;

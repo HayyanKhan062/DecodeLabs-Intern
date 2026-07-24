@@ -8,8 +8,19 @@
  * ============================================================================
  */
 
+import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { Attachment } from '../types/chat';
+
+// Ensure environment variables are loaded from .env.local and .env
+dotenv.config({ path: '.env.local' });
+dotenv.config();
+
+if (!process.env.GEMINI_API_KEY && !process.env.OPENROUTER_API_KEY) {
+  console.warn(
+    '⚠️ [Axiom AI Warning]: GEMINI_API_KEY is not set in server environment variables. Please set GEMINI_API_KEY in your .env or server environment.'
+  );
+}
 
 export interface ChatApiRequestPayload {
   messages: Array<{
@@ -35,19 +46,19 @@ export async function handleStreamChatResponse(
   onChunk: (text: string) => void
 ): Promise<void> {
   const modelReq = payload.model || 'gemini-2.5-flash';
-  const customKey = payload.customApiKey;
+  const customKey = payload.customApiKey?.trim();
   const customKeys = payload.customApiKeys || {};
 
   const openrouterKey =
-    customKeys.openrouter ||
+    (customKeys.openrouter && customKeys.openrouter.trim()) ||
     (customKey?.startsWith('sk-or-') ? customKey : undefined) ||
-    process.env.OPENROUTER_API_KEY;
+    process.env.OPENROUTER_API_KEY?.trim();
 
   // Retrieve Gemini API key from custom user key or process.env.GEMINI_API_KEY
   const geminiKey =
-    customKeys.gemini ||
+    (customKeys.gemini && customKeys.gemini.trim()) ||
     (customKey?.startsWith('AIza') ? customKey : undefined) ||
-    process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY?.trim();
 
   const isGeminiModel = modelReq.startsWith('gemini');
 
@@ -76,7 +87,7 @@ export async function handleStreamChatResponse(
   }
 
   throw new Error(
-    'No valid API key found. Please configure GEMINI_API_KEY in your environment variables (.env file) or inside Settings.'
+    'Gemini API key is not configured. Please add GEMINI_API_KEY to your server environment variables.'
   );
 }
 
