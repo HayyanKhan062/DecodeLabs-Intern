@@ -11,7 +11,7 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
-import { handleStreamChatResponse } from './src/lib/gemini-server';
+import { handleStreamChatResponse, parseGeminiErrorMessage } from './src/lib/gemini-server';
 
 try {
   dotenv.config({ path: '.env.local' });
@@ -62,7 +62,7 @@ async function startServer() {
       res.end();
     } catch (err: any) {
       console.error('Server API Error:', err);
-      const errorMessage = err?.message || 'Internal AI Service Error';
+      const errorMessage = parseGeminiErrorMessage(err);
       if (!res.headersSent) {
         res.setHeader('Content-Type', 'application/json');
         res.status(400).json({ error: errorMessage });

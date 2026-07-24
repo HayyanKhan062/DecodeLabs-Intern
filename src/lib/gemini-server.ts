@@ -49,6 +49,45 @@ const OPENROUTER_MODEL_MAP: Record<string, string> = {
   'custom': 'google/gemini-2.5-flash',
 };
 
+export function parseGeminiErrorMessage(err: any): string {
+  if (!err) return 'Unknown AI service error';
+
+  let raw = err.message || (typeof err === 'string' ? err : JSON.stringify(err));
+
+  // Recursively unwrap stringified JSON up to 4 levels
+  for (let i = 0; i < 4; i++) {
+    if (typeof raw === 'string' && (raw.trim().startsWith('{') || raw.trim().startsWith('['))) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.error) {
+          if (typeof parsed.error === 'string') {
+            raw = parsed.error;
+          } else if (parsed.error.message) {
+            raw = parsed.error.message;
+          } else {
+            raw = JSON.stringify(parsed.error);
+          }
+        } else if (parsed.message) {
+          raw = parsed.message;
+        } else {
+          break;
+        }
+      } catch {
+        break;
+      }
+    } else {
+      break;
+    }
+  }
+
+  if (typeof raw !== 'string') {
+    raw = JSON.stringify(raw);
+  }
+
+  const clean = raw.trim();
+  return clean || 'Unknown AI service error';
+}
+
 export async function handleStreamChatResponse(
   payload: ChatApiRequestPayload,
   onChunk: (text: string) => void
@@ -82,8 +121,10 @@ export async function handleStreamChatResponse(
       await streamGeminiResponse(payload, geminiKey, modelReq, onChunk);
       return;
     } catch (err: any) {
-      console.warn('Native Gemini SDK failed, trying OpenRouter fallback if available:', err?.message || err);
-      if (!openrouterKey) throw err;
+      console.warn('Native Gemini SDK failed, trying OpenRouter fallback if available:', parseGeminiErrorMessage(err));
+      if (!openrouterKey) {
+        throw new Error(parseGeminiErrorMessage(err));
+      }
     }
   }
 
@@ -96,8 +137,12 @@ export async function handleStreamChatResponse(
 
   // 3. Fallback to Gemini SDK if default key is present
   if (geminiKey) {
-    await streamGeminiResponse(payload, geminiKey, 'gemini-3.6-flash', onChunk);
-    return;
+    try {
+      await streamGeminiResponse(payload, geminiKey, 'gemini-3.6-flash', onChunk);
+      return;
+    } catch (err: any) {
+      throw new Error(parseGeminiErrorMessage(err));
+    }
   }
 
   throw new Error(
@@ -328,7 +373,7 @@ async function streamGeminiResponse(
   }
 
   if (lastErr) {
-    throw lastErr;
+    throw new Error(parseGeminiErrorMessage(lastErr));
   }
 }
 

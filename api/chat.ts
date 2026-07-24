@@ -15,7 +15,7 @@ try {
   // Ignore filesystem dotenv errors in serverless runtime
 }
 
-import { handleStreamChatResponse } from '../src/lib/gemini-server';
+import { handleStreamChatResponse, parseGeminiErrorMessage } from '../src/lib/gemini-server';
 
 export default async function handler(req: any, res: any) {
   // Enable CORS
@@ -61,7 +61,7 @@ export default async function handler(req: any, res: any) {
     return res.end();
   } catch (err: any) {
     console.error('Vercel API Route Error:', err);
-    const errorMessage = err?.message || 'Internal AI Service Error';
+    const errorMessage = parseGeminiErrorMessage(err);
     if (!res.headersSent) {
       res.setHeader('Content-Type', 'application/json');
       return res.status(400).json({ error: errorMessage });

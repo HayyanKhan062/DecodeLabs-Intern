@@ -273,8 +273,25 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with status ${response.status}`);
+        let rawErrorMsg = '';
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            rawErrorMsg =
+              typeof errorData.error === 'string'
+                ? errorData.error
+                : errorData.error?.message || errorData.message || JSON.stringify(errorData);
+          } else {
+            const textData = await response.text();
+            rawErrorMsg = textData;
+          }
+        } catch {
+          rawErrorMsg = '';
+        }
+
+        const finalMsg = rawErrorMsg || `Server responded with status ${response.status}`;
+        throw new Error(finalMsg);
       }
 
       if (!response.body) {
@@ -290,6 +307,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
+        if (chunk.includes('[Error:')) {
+          const match = chunk.match(/\[Error:\s*([\s\S]+?)\]/);
+          if (match && match[1]) {
+            throw new Error(match[1]);
+          }
+        }
         accumulatedText += chunk;
 
         // Update assistant message content in state
