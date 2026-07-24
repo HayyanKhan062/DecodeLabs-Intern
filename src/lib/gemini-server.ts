@@ -57,7 +57,7 @@ export async function handleStreamChatResponse(
     throw new Error('Invalid request payload: messages array is required.');
   }
 
-  const modelReq = payload.model || 'gemini-3.6-flash';
+  const modelReq = payload.model || 'gemini-2.5-flash';
   const customKey = payload.customApiKey?.trim();
   const customKeys = payload.customApiKeys || {};
 
@@ -96,7 +96,7 @@ export async function handleStreamChatResponse(
 
   // 3. Fallback to Gemini SDK if default key is present
   if (geminiKey) {
-    await streamGeminiResponse(payload, geminiKey, 'gemini-3.6-flash', onChunk);
+    await streamGeminiResponse(payload, geminiKey, 'gemini-2.5-flash', onChunk);
     return;
   }
 
@@ -237,19 +237,22 @@ async function streamGeminiResponse(
     !cleanModel ||
     cleanModel === 'AX Nova 1.0' ||
     cleanModel === 'custom' ||
-    cleanModel === 'gemini-2.5-flash'
+    cleanModel.includes('3.6') ||
+    cleanModel.includes('3.1') ||
+    cleanModel.includes('3.0')
   ) {
-    cleanModel = 'gemini-3.6-flash';
+    cleanModel = 'gemini-2.5-flash';
   }
 
   // Build model candidate sequence with valid Gemini API model identifiers
   const candidates = Array.from(
     new Set([
       cleanModel,
-      'gemini-3.6-flash',
-      'gemini-flash-latest',
-      'gemini-3.1-flash-lite',
-      'gemini-3.1-pro-preview',
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
     ])
   );
 
