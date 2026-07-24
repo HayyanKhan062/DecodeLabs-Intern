@@ -37,7 +37,11 @@ export interface ChatApiRequestPayload {
 }
 
 const OPENROUTER_MODEL_MAP: Record<string, string> = {
+  'gemini-3.6-flash': 'google/gemini-2.5-flash',
   'gemini-2.5-flash': 'google/gemini-2.5-flash',
+  'gemini-2.5-pro': 'google/gemini-2.5-pro',
+  'gemini-2.0-flash': 'google/gemini-2.0-flash-001',
+  'gemini-1.5-flash': 'google/gemini-flash-1.5',
   'custom': 'google/gemini-2.5-flash',
 };
 
@@ -57,10 +61,12 @@ export async function handleStreamChatResponse(
   // Retrieve Gemini API key from custom user key or process.env.GEMINI_API_KEY
   const geminiKey =
     (customKeys.gemini && customKeys.gemini.trim()) ||
-    (customKey?.startsWith('AIza') ? customKey : undefined) ||
-    process.env.GEMINI_API_KEY?.trim();
+    (customKey && !customKey.startsWith('sk-or-') ? customKey : undefined) ||
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.API_KEY?.trim() ||
+    process.env.GOOGLE_API_KEY?.trim();
 
-  const isGeminiModel = modelReq.startsWith('gemini');
+  const isGeminiModel = modelReq.startsWith('gemini') || modelReq === 'custom';
 
   // 1. Prefer native Google Gemini SDK if Gemini key is available
   if (isGeminiModel && geminiKey) {
@@ -75,19 +81,19 @@ export async function handleStreamChatResponse(
 
   // 2. If OpenRouter key exists, stream via OpenRouter
   if (openrouterKey) {
-    const mappedModel = OPENROUTER_MODEL_MAP[modelReq] || modelReq;
+    const mappedModel = OPENROUTER_MODEL_MAP[modelReq] || (modelReq.includes('/') ? modelReq : 'google/gemini-2.5-flash');
     await streamOpenRouterResponse(payload, openrouterKey, mappedModel, onChunk);
     return;
   }
 
-  // 3. Fallback to Gemini SDK with default key if present
+  // 3. Fallback to Gemini SDK if default key is present
   if (geminiKey) {
-    await streamGeminiResponse(payload, geminiKey, 'gemini-3.6-flash', onChunk);
+    await streamGeminiResponse(payload, geminiKey, 'gemini-2.5-flash', onChunk);
     return;
   }
 
   throw new Error(
-    'Gemini API key is not configured. Please add GEMINI_API_KEY to your server environment variables.'
+    'Gemini API key is not configured. Please add GEMINI_API_KEY to your server environment variables or enter your API key in Settings -> API Keys Setup.'
   );
 }
 
@@ -219,24 +225,19 @@ async function streamGeminiResponse(
   // Clean model name if passed with 'models/' prefix
   let cleanModel = modelName.startsWith('models/') ? modelName.replace('models/', '') : modelName;
 
-  if (
-    cleanModel === 'gemini-2.5-flash' ||
-    cleanModel === 'gemini-2.0-flash' ||
-    cleanModel === 'gemini-1.5-flash' ||
-    cleanModel === 'gemini-2.5-pro' ||
-    cleanModel === 'gemini-1.5-pro'
-  ) {
-    cleanModel = 'gemini-3.6-flash';
+  if (cleanModel === 'gemini-3.6-flash' || cleanModel === 'AX Nova 1.0' || cleanModel === 'custom') {
+    cleanModel = 'gemini-2.5-flash';
   }
 
-  // Build model candidate sequence to guarantee execution
+  // Build model candidate sequence with valid Gemini API model identifiers
   const candidates = Array.from(
     new Set([
       cleanModel,
-      'gemini-3.6-flash',
-      'gemini-flash-latest',
-      'gemini-3.1-flash-lite',
-      'gemini-3.1-pro-preview',
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-2.5-pro',
+      'gemini-1.5-pro',
     ])
   );
 

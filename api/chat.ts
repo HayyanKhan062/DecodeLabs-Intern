@@ -7,7 +7,11 @@
  * ==============================================================================
  */
 
-import { handleStreamChatResponse } from '../src/lib/gemini-server.js';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+dotenv.config();
+
+import { handleStreamChatResponse } from '../src/lib/gemini-server';
 
 export default async function handler(req: any, res: any) {
   // Enable CORS
