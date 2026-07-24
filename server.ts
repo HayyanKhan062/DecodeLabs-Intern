@@ -47,6 +47,10 @@ async function startServer() {
   app.post('/api/chat', async (req, res) => {
     try {
       const payload = req.body;
+      if (!payload || !payload.messages) {
+        return res.status(400).json({ error: 'Missing required payload or messages array.' });
+      }
+
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-transform');
       res.setHeader('X-Content-Type-Options', 'nosniff');

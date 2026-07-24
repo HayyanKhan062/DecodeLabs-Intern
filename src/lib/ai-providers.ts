@@ -55,10 +55,10 @@ export const AI_PROVIDERS: ProviderInfo[] = [
 
 export const AVAILABLE_MODELS: AIModel[] = [
   {
-    id: 'gemini-3.6-flash',
+    id: 'gemini-2.5-flash',
     name: 'AX Nova 1.0',
     provider: 'gemini',
-    description: 'Axiom’s primary intelligence engine powered by Gemini 3.6 Flash',
+    description: 'Axiom’s primary intelligence engine powered by Gemini 2.5 Flash',
     badge: 'Recommended',
     maxTokens: 8192,
     supportsVision: true,

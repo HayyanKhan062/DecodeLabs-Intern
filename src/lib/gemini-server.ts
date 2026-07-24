@@ -53,7 +53,11 @@ export async function handleStreamChatResponse(
   payload: ChatApiRequestPayload,
   onChunk: (text: string) => void
 ): Promise<void> {
-  const modelReq = payload.model || 'gemini-3.6-flash';
+  if (!payload || !Array.isArray(payload.messages)) {
+    throw new Error('Invalid request payload: messages array is required.');
+  }
+
+  const modelReq = payload.model || 'gemini-2.5-flash';
   const customKey = payload.customApiKey?.trim();
   const customKeys = payload.customApiKeys || {};
 
@@ -70,7 +74,7 @@ export async function handleStreamChatResponse(
     process.env.API_KEY?.trim() ||
     process.env.GOOGLE_API_KEY?.trim();
 
-  const isGeminiModel = modelReq.startsWith('gemini') || modelReq === 'custom';
+  const isGeminiModel = modelReq.startsWith('gemini') || modelReq === 'custom' || modelReq === 'AX Nova 1.0';
 
   // 1. Prefer native Google Gemini SDK if Gemini key is available
   if (isGeminiModel && geminiKey) {
@@ -92,7 +96,7 @@ export async function handleStreamChatResponse(
 
   // 3. Fallback to Gemini SDK if default key is present
   if (geminiKey) {
-    await streamGeminiResponse(payload, geminiKey, 'gemini-3.6-flash', onChunk);
+    await streamGeminiResponse(payload, geminiKey, 'gemini-2.5-flash', onChunk);
     return;
   }
 
@@ -223,25 +227,25 @@ async function streamGeminiResponse(
   let cleanModel = modelName.startsWith('models/') ? modelName.replace('models/', '') : modelName;
 
   if (
+    !cleanModel ||
     cleanModel === 'AX Nova 1.0' ||
     cleanModel === 'custom' ||
-    cleanModel === 'gemini-2.5-flash' ||
-    cleanModel === 'gemini-2.0-flash' ||
-    cleanModel === 'gemini-1.5-flash' ||
-    cleanModel === 'gemini-2.5-pro' ||
-    cleanModel === 'gemini-1.5-pro'
+    cleanModel === 'gemini-3.6-flash' ||
+    cleanModel === 'gemini-3.1-flash' ||
+    cleanModel === 'gemini-3.0-flash'
   ) {
-    cleanModel = 'gemini-3.6-flash';
+    cleanModel = 'gemini-2.5-flash';
   }
 
   // Build model candidate sequence with valid Gemini API model identifiers
   const candidates = Array.from(
     new Set([
       cleanModel,
-      'gemini-3.6-flash',
-      'gemini-flash-latest',
-      'gemini-3.1-flash-lite',
-      'gemini-3.1-pro-preview',
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
     ])
   );
 
