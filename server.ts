@@ -10,6 +10,7 @@
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
+import { createServer as createViteServer } from 'vite';
 import { handleStreamChatResponse } from './src/lib/gemini-server';
 
 try {
@@ -25,45 +26,67 @@ if (!process.env.GEMINI_API_KEY && !process.env.OPENROUTER_API_KEY) {
   );
 }
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+async function startServer() {
+  const app = express();
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-app.use(express.json({ limit: '20mb' }));
+  app.use(express.json({ limit: '20mb' }));
 
-// API route for streaming AI chat completions
-app.post('/api/chat', async (req, res) => {
-  try {
-    const payload = req.body;
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-
-    await handleStreamChatResponse(payload, (chunkText) => {
-      res.write(chunkText);
-    });
-
-    res.end();
-  } catch (err: any) {
-    console.error('Server API Error:', err);
-    const errorMessage = err?.message || 'Internal AI Service Error';
-    if (!res.headersSent) {
-      res.setHeader('Content-Type', 'application/json');
-      res.status(400).json({ error: errorMessage });
-    } else {
-      res.write(`\n\n[Error: ${errorMessage}]`);
-      res.end();
+  // CORS middleware for API requests
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,PUT,DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
     }
+    next();
+  });
+
+  // API route for streaming AI chat completions
+  app.post('/api/chat', async (req, res) => {
+    try {
+      const payload = req.body;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+
+      await handleStreamChatResponse(payload, (chunkText) => {
+        res.write(chunkText);
+      });
+
+      res.end();
+    } catch (err: any) {
+      console.error('Server API Error:', err);
+      const errorMessage = err?.message || 'Internal AI Service Error';
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'application/json');
+        res.status(400).json({ error: errorMessage });
+      } else {
+        res.write(`\n\n[Error: ${errorMessage}]`);
+        res.end();
+      }
+    }
+  });
+
+  // Vite middleware for development vs static serve for production
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
   }
-});
 
-// Serve static assets in production
-const distPath = path.join(process.cwd(), 'dist');
-app.use(express.static(distPath));
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`⚡ Axiom AI Server listening on http://0.0.0.0:${PORT}`);
+  });
+}
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`⚡ Axiom AI Server listening on port ${PORT}`);
-});
+startServer();
