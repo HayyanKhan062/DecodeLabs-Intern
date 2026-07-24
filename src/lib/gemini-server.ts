@@ -13,8 +13,12 @@ import { GoogleGenAI } from '@google/genai';
 import { Attachment } from '../types/chat';
 
 // Ensure environment variables are loaded from .env.local and .env
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+try {
+  dotenv.config({ path: '.env.local' });
+  dotenv.config();
+} catch {
+  // Ignore dotenv errors in serverless runtime
+}
 
 if (!process.env.GEMINI_API_KEY && !process.env.OPENROUTER_API_KEY) {
   console.warn(
@@ -49,7 +53,7 @@ export async function handleStreamChatResponse(
   payload: ChatApiRequestPayload,
   onChunk: (text: string) => void
 ): Promise<void> {
-  const modelReq = payload.model || 'gemini-2.5-flash';
+  const modelReq = payload.model || 'gemini-3.6-flash';
   const customKey = payload.customApiKey?.trim();
   const customKeys = payload.customApiKeys || {};
 
@@ -88,7 +92,7 @@ export async function handleStreamChatResponse(
 
   // 3. Fallback to Gemini SDK if default key is present
   if (geminiKey) {
-    await streamGeminiResponse(payload, geminiKey, 'gemini-2.5-flash', onChunk);
+    await streamGeminiResponse(payload, geminiKey, 'gemini-3.6-flash', onChunk);
     return;
   }
 
@@ -213,31 +217,31 @@ async function streamGeminiResponse(
   modelName: string,
   onChunk: (text: string) => void
 ): Promise<void> {
-  const ai = new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
+  const ai = new GoogleGenAI({ apiKey });
 
   // Clean model name if passed with 'models/' prefix
   let cleanModel = modelName.startsWith('models/') ? modelName.replace('models/', '') : modelName;
 
-  if (cleanModel === 'gemini-3.6-flash' || cleanModel === 'AX Nova 1.0' || cleanModel === 'custom') {
-    cleanModel = 'gemini-2.5-flash';
+  if (
+    cleanModel === 'AX Nova 1.0' ||
+    cleanModel === 'custom' ||
+    cleanModel === 'gemini-2.5-flash' ||
+    cleanModel === 'gemini-2.0-flash' ||
+    cleanModel === 'gemini-1.5-flash' ||
+    cleanModel === 'gemini-2.5-pro' ||
+    cleanModel === 'gemini-1.5-pro'
+  ) {
+    cleanModel = 'gemini-3.6-flash';
   }
 
   // Build model candidate sequence with valid Gemini API model identifiers
   const candidates = Array.from(
     new Set([
       cleanModel,
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-2.5-pro',
-      'gemini-1.5-pro',
+      'gemini-3.6-flash',
+      'gemini-flash-latest',
+      'gemini-3.1-flash-lite',
+      'gemini-3.1-pro-preview',
     ])
   );
 
@@ -271,10 +275,12 @@ async function streamGeminiResponse(
   });
 
   const config: any = {
-    systemInstruction: payload.systemInstruction || undefined,
     temperature: payload.temperature ?? 0.7,
     maxOutputTokens: payload.maxTokens ?? 4096,
   };
+  if (payload.systemInstruction) {
+    config.systemInstruction = payload.systemInstruction;
+  }
 
   let lastErr: any = null;
   for (const modelCandidate of candidates) {

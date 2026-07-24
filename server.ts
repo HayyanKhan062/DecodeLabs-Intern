@@ -12,8 +12,12 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { handleStreamChatResponse } from './src/lib/gemini-server';
 
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+try {
+  dotenv.config({ path: '.env.local' });
+  dotenv.config();
+} catch {
+  // Ignore dotenv errors
+}
 
 if (!process.env.GEMINI_API_KEY && !process.env.OPENROUTER_API_KEY) {
   console.warn(
@@ -29,14 +33,10 @@ app.use(express.json({ limit: '20mb' }));
 // API route for streaming AI chat completions
 app.post('/api/chat', async (req, res) => {
   try {
-    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
-    if (!authHeader || typeof authHeader !== 'string' || !authHeader.trim()) {
-      return res.status(401).json({ error: 'Unauthorized: Authentication required before using Axiom AI.' });
-    }
-
     const payload = req.body;
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
     await handleStreamChatResponse(payload, (chunkText) => {
       res.write(chunkText);
@@ -45,10 +45,12 @@ app.post('/api/chat', async (req, res) => {
     res.end();
   } catch (err: any) {
     console.error('Server API Error:', err);
+    const errorMessage = err?.message || 'Internal AI Service Error';
     if (!res.headersSent) {
-      res.status(500).json({ error: err.message || 'Internal AI Service Error' });
+      res.setHeader('Content-Type', 'application/json');
+      res.status(400).json({ error: errorMessage });
     } else {
-      res.write(`\n\n[Error: ${err.message || 'Stream interrupted'}]`);
+      res.write(`\n\n[Error: ${errorMessage}]`);
       res.end();
     }
   }

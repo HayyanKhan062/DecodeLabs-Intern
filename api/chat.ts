@@ -8,8 +8,12 @@
  */
 
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+try {
+  dotenv.config({ path: '.env.local' });
+  dotenv.config();
+} catch {
+  // Ignore filesystem dotenv errors in serverless runtime
+}
 
 import { handleStreamChatResponse } from '../src/lib/gemini-server';
 
@@ -20,23 +24,16 @@ export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
   );
 
   // Handle preflight CORS OPTIONS check
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Security check: Require authentication
-  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
-  if (!authHeader || typeof authHeader !== 'string' || !authHeader.trim()) {
-    return res.status(401).json({ error: 'Unauthorized: Authentication required before using Axiom AI.' });
   }
 
   try {
@@ -54,20 +51,23 @@ export default async function handler(req: any, res: any) {
     }
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
     await handleStreamChatResponse(payload, (chunkText: string) => {
       res.write(chunkText);
     });
 
-    res.end();
+    return res.end();
   } catch (err: any) {
     console.error('Vercel API Route Error:', err);
+    const errorMessage = err?.message || 'Internal AI Service Error';
     if (!res.headersSent) {
-      res.status(500).json({ error: err?.message || 'Internal AI Service Error' });
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(400).json({ error: errorMessage });
     } else {
-      res.write(`\n\n[Error: ${err?.message || 'Stream interrupted'}]`);
-      res.end();
+      res.write(`\n\n[Error: ${errorMessage}]`);
+      return res.end();
     }
   }
 }
