@@ -20,7 +20,7 @@ Use precise Markdown for formatting, tables, math expressions, bullet points, an
 Be concise yet thorough. If analyzing attached files or images, provide detailed and actionable context.`,
 
   // Default parameters
-  defaultModel: 'gemini-2.5-flash',
+  defaultModel: 'gemini-3.6-flash',
   defaultTemperature: 0.7,
   defaultMaxTokens: 4096,
   
